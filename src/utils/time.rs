@@ -39,3 +39,10 @@ pub fn get_five_am_timestamp(now: DateTime<Tz>) -> DateTime<Local> {
         .and_hms_opt(5, 0, 0)
         .expect("Chrono must work.")
 }
+
+pub fn get_five_forty_pm_timestamp(now: DateTime<Tz>) -> DateTime<Local> {
+    chrono::Local
+        .ymd(now.year(), now.month(), now.day())
+        .and_hms_opt(17, 40, 0)
+        .expect("Chrono must work.")
+}

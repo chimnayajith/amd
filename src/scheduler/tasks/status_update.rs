@@ -64,8 +64,8 @@ pub async fn check_status_updates(ctx: Context) {
 
     let mut naughty_list: Vec<String> = vec![];
 
-    for member in &members {
-        let name_parts: Vec<&str> = member.split_whitespace().collect();
+    for (_id, name) in &members {
+        let name_parts: Vec<&str> = name.split_whitespace().collect();
         let first_name = name_parts.get(0).unwrap_or(&"");
         let last_name = name_parts.get(1).unwrap_or(&"");
         let has_sent_update = valid_updates
@@ -73,7 +73,7 @@ pub async fn check_status_updates(ctx: Context) {
             .any(|msg| msg.content.contains(first_name) || msg.content.contains(last_name));
 
         if !has_sent_update {
-            naughty_list.push(member.to_string());
+            naughty_list.push(name.to_string());
         }
     }
 

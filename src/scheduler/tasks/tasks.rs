@@ -22,6 +22,7 @@ use serenity::client::Context;
 use tokio::time::Duration;
 
 use super::status_update;
+use super::lab_attendance;
 
 #[async_trait]
 pub trait Task: Send + Sync {
@@ -31,6 +32,7 @@ pub trait Task: Send + Sync {
 }
 
 pub struct StatusUpdateCheck;
+pub struct PresenseReport;
 
 #[async_trait]
 impl Task for StatusUpdateCheck {
@@ -47,6 +49,24 @@ impl Task for StatusUpdateCheck {
     }
 }
 
+#[async_trait]
+impl Task for PresenseReport {
+    fn name(&self) -> &'static str {
+        "PresenseReport"
+    }
+
+    fn run_in(&self) -> Duration {
+        time_until(18,0)
+    }
+
+    async fn run(&self, ctx: Context) {
+        lab_attendance::check_lab_attendance(ctx).await;
+    }
+}
+
 pub fn get_tasks() -> Vec<Box<dyn Task>> {
-    vec![Box::new(StatusUpdateCheck)]
+    vec![
+        Box::new(StatusUpdateCheck),
+        Box::new(PresenseReport)
+    ]
 }

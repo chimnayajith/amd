@@ -16,14 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 use serde_json::Value;
+use chrono::{ Local };
 
 const REQUEST_URL: &str = "https://root.shuttleapp.rs/";
 
-pub async fn fetch_members() -> Result<Vec<String>, reqwest::Error> {
+pub async fn fetch_members() -> Result<Vec<(String, String)>, reqwest::Error> {
     let client = reqwest::Client::new();
     let query = r#"
     query {
         getMember {
+            id,
             name
         }
     }"#;
@@ -36,12 +38,53 @@ pub async fn fetch_members() -> Result<Vec<String>, reqwest::Error> {
 
     let json: Value = response.json().await?;
 
-    let member_names: Vec<String> = json["data"]["getMember"]
+    let members: Vec<(String, String)> = json["data"]["getMember"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .map(|member| {
+        let id = member["id"].as_i64().map(|num| num.to_string()).unwrap_or_default();
+        let name = member["name"].as_str().unwrap_or("").to_string();
+        (id, name)
+    })
+    .collect();
+
+    Ok(members)
+}
+
+pub async fn fetch_attendance() -> Result<Vec<(String, String)>, reqwest::Error> {
+    let client = reqwest::Client::new();
+
+    let today = Local::now().format("%Y-%m-%d").to_string();
+    let query = format!(
+        r#"
+        query {{
+            getAttendance(date: "{}") {{
+                id,
+                timein
+            }}
+        }}"#,
+        today
+    );
+
+    let response = client
+        .post(REQUEST_URL)
+        .json(&serde_json::json!({ "query": query }))
+        .send()
+        .await?;
+
+    let json: Value = response.json().await?;
+
+    let attendance: Vec<(String, String)> = json["data"]["getAttendance"]
         .as_array()
         .unwrap()
         .iter()
-        .map(|member| member["name"].as_str().unwrap().to_string())
+        .map(|entry| {
+            let id = entry["id"].to_string();
+            let timein = entry["timein"].as_str().unwrap_or("").to_string();
+            (id, timein)
+        })
         .collect();
 
-    Ok(member_names)
+    Ok(attendance)
 }
